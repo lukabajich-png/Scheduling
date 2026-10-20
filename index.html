@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Midterm Stretch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: scoreboard-style header with exam countdowns, scrollable date strip, one day's timeline below (or all days stacked). */
+:root {
+  --bg: #edf0f4;
+  --surface: #ffffff;
+  --fg: #131d2b;
+  --muted: #5b6778;
+  --line: #d5dbe4;
+  --accent: #1f4aa8;
+  --accent-ink: #ffffff;
+  --c-class: #1f4aa8;
+  --c-gym: #2f7d5b;
+  --c-due: #a8620d;
+  --c-study: #6b4fb3;
+  --c-exam: #c0312b;
+  --c-game: #0e7490;
+  --c-party: #b0307a;
+  --c-free: #7a8696;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Barlow", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1620; --surface: #17212e; --fg: #e8edf4; --muted: #9aa7b8; --line: #2a3646;
+    --accent: #7aa2f7; --accent-ink: #0f1620;
+    --c-class: #7aa2f7; --c-gym: #5fc596; --c-due: #e0a24a; --c-study: #a994e8;
+    --c-exam: #ff7a72; --c-game: #4cc3dc; --c-party: #f08ac4; --c-free: #8d9aad;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1620; --surface: #17212e; --fg: #e8edf4; --muted: #9aa7b8; --line: #2a3646;
+  --accent: #7aa2f7; --accent-ink: #0f1620;
+  --c-class: #7aa2f7; --c-gym: #5fc596; --c-due: #e0a24a; --c-study: #a994e8;
+  --c-exam: #ff7a72; --c-game: #4cc3dc; --c-party: #f08ac4; --c-free: #8d9aad;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 16px; line-height: 1.4;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+header h1 { font-family: var(--f-display); font-weight: 700; font-size: 2.4rem; line-height: 1; margin: 0; letter-spacing: 0.01em; text-transform: uppercase; text-wrap: balance; }
+header p { margin: 6px 0 0; color: var(--muted); font-size: 0.95rem; }
+.counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.count { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.count .lbl { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.count .name { font-weight: 600; }
+.count .time { font-family: var(--f-display); font-weight: 700; font-size: 2rem; line-height: 1.05; color: var(--c-exam); font-variant-numeric: tabular-nums; }
+.count .when { font-size: 0.85rem; color: var(--muted); }
+.progress { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; color: var(--muted); }
+.bar { flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--c-gym); width: 0; transition: width .25s; }
+.tabs { display: flex; gap: 6px; }
+.tab, .navbtn { font: inherit; font-weight: 600; font-size: 0.9rem; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+.tab[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.tabs .spacer { flex: 1; }
+.strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+.dbtn { flex: 0 0 auto; width: 56px; padding: 8px 0 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.dbtn .dw { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.dbtn .dn { font-family: var(--f-display); font-weight: 700; font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.dbtn .dots { display: flex; gap: 3px; height: 6px; }
+.dbtn .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--c-free); }
+.dbtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.dbtn[aria-pressed="true"] .dw { color: inherit; opacity: .85; }
+.dbtn.today:not([aria-pressed="true"]) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.dbtn.past { opacity: .55; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.day { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px 16px 8px; }
+.day h2 { font-family: var(--f-display); font-weight: 700; font-size: 1.7rem; text-transform: uppercase; letter-spacing: 0.01em; margin: 0; padding: 14px 0 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.day h2 small { font-family: var(--f-body); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; color: var(--accent); }
+.row { display: grid; grid-template-columns: 6.6rem minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row .t { font-family: var(--f-mono); font-size: 0.78rem; color: var(--muted); padding-top: 3px; line-height: 1.35; }
+.row .main { min-width: 0; display: flex; gap: 10px; align-items: flex-start; }
+.mk { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 2px; margin-top: 7px; background: var(--c-free); }
+.body { min-width: 0; flex: 1; }
+.ttl { font-weight: 600; overflow-wrap: anywhere; }
+.sub { font-size: 0.88rem; color: var(--muted); overflow-wrap: anywhere; }
+.tag { display: inline-block; margin-left: 6px; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; vertical-align: 1px; }
+.row label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; flex: 1; min-width: 0; }
+.row input[type=checkbox] { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--accent); flex: 0 0 auto; }
+.row.done .ttl { text-decoration: line-through; color: var(--muted); }
+.row.opt .ttl { font-weight: 500; }
+.y-class .mk { background: var(--c-class); } .y-class .tag { color: var(--c-class); }
+.y-gym .mk { background: var(--c-gym); } .y-gym .tag { color: var(--c-gym); }
+.y-due .mk { background: var(--c-due); } .y-due .tag { color: var(--c-due); }
+.y-study .mk { background: var(--c-study); } .y-study .tag { color: var(--c-study); }
+.y-exam .mk { background: var(--c-exam); } .y-exam .tag { color: var(--c-exam); }
+.y-game .mk { background: var(--c-game); } .y-game .tag { color: var(--c-game); }
+.y-party .mk { background: var(--c-party); } .y-party .tag { color: var(--c-party); }
+.y-free .mk { background: var(--c-free); } .y-free .tag { color: var(--c-free); }
+.dbtn .dots i.y-due { background: var(--c-due); } .dbtn .dots i.y-exam { background: var(--c-exam); }
+.dbtn .dots i.y-game { background: var(--c-game); } .dbtn .dots i.y-party { background: var(--c-party); }
+.dbtn .dots i.y-study { background: var(--c-study); }
+.dbtn[aria-pressed="true"] .dots i { background: var(--accent-ink); opacity: .9; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.78rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.note { font-size: 0.85rem; color: var(--muted); }
+@media (max-width: 440px) { .row { grid-template-columns: 5.2rem minmax(0, 1fr); gap: 8px; } header h1 { font-size: 2rem; } }
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+body{margin:0}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <h1>Midterm Stretch</h1>
+    <p>Oct 19 to Nov 10. Classes, gym, deadlines, study blocks and game days.</p>
+  </header>
+
+  <section class="counts" id="counts" aria-label="Exam countdowns"></section>
+
+  <div class="progress"><span id="ptxt">0 of 0 deadlines submitted</span><div class="bar"><i id="pbar"></i></div></div>
+
+  <div class="tabs" role="group" aria-label="View">
+    <button class="tab" id="tab-day" aria-pressed="true" type="button">Day</button>
+    <button class="tab" id="tab-all" aria-pressed="false" type="button">All days</button>
+    <span class="spacer"></span>
+    <button class="navbtn" id="prev" type="button" aria-label="Previous day">&larr;</button>
+    <button class="navbtn" id="next" type="button" aria-label="Next day">&rarr;</button>
+  </div>
+
+  <div class="strip" id="strip" role="group" aria-label="Pick a day"></div>
+
+  <main id="main" class="stack"></main>
+
+  <div class="legend" id="legend"></div>
+  <p class="note">Penn State kickoff times and your Halloweekend dates are not confirmed. Tick a box and it stays checked in this browser.</p>
+</div>
+
+<script>
+(function () {
+  var WD = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  var WDL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var MO = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var TYPES = { class:"Class", gym:"Gym", due:"Deadline", study:"Work block", exam:"Exam", game:"Game", party:"Halloweekend", free:"Free" };
+  var TAGS = { class:"Class", gym:"Gym", due:"Due", study:"Study", exam:"Exam", game:"Game", party:"Out", free:"Free" };
+
+  function it(k, t, n, s, y, o) { var r = { k:k, t:t, n:n, s:s || "", y:y }; if (o) for (var p in o) r[p] = o[p]; return r; }
+
+  var CUSTOM = {
+    "10-19": [
+      it("20:30","8:30–11:00 PM","Finish IE 322 Homework 8","50 points","study",{id:"s-1019"}),
+      it("23:59","11:59 PM","Submit IE 322 Homework 8","50 points, due tonight","due",{id:"hw322-8"})
+    ],
+    "10-20": [
+      it("13:30","1:30–5:00 PM","IE 302 Homework 9","100 points, due Wed 11:59 PM","study",{id:"s-1020a"}),
+      it("19:00","7:00–9:00 PM","MATSE 259 Quiz 6","1 point, due Wed 11:59 PM","study",{id:"s-1020b"})
+    ],
+    "10-21": [
+      it("21:00","By 9:00 PM","Submit IE 302 Homework 9","100 points, due 11:59 PM","due",{id:"hw302-9"}),
+      it("21:05","By 9:00 PM","Submit MATSE 259 Quiz 6","1 point, due 11:59 PM","due",{id:"q259-6"})
+    ],
+    "10-22": [
+      it("13:30","1:30–4:00 PM","Draft IE 405 Project Proposal","10 points, due Sat 11:59 PM","study",{id:"s-1022"})
+    ],
+    "10-23": [
+      it("12:00","In class","IE 405 Quiz 8","In-class quiz","exam"),
+      it("13:30","1:30–4:00 PM","Finish Project Proposal and Mid-Semester Survey","Clears your Saturday","study",{id:"s-1023"}),
+      it("16:00","By 4:00 PM","Submit IE 405 Project Proposal","10 points, due Sat 11:59 PM","due",{id:"prop405"}),
+      it("16:05","By 4:00 PM","Submit IE 405 Mid-Semester Survey","2 points, due Sat 11:59 PM","due",{id:"survey405"}),
+      it("18:00","Evening","Free","","free")
+    ],
+    "10-24": [
+      it("11:00","About 1 hour","KINES 77 Homework 4","Shoulders and hips, 15 points, due Sun 11:59 PM","study",{id:"s-1024"}),
+      it("12:00","All day","Free","","free")
+    ],
+    "10-25": [
+      it("14:00","2:00–5:00 PM","Study for the IE 302 exam","Exam is Wed Oct 28","study",{id:"s-1025"}),
+      it("17:00","By 5:00 PM","Submit MATSE 259 Homework 7","1 point, due 11:59 PM","due",{id:"hw259-7"}),
+      it("17:05","By 5:00 PM","Submit KINES 77 Homework 4","15 points, due 11:59 PM","due",{id:"hw77-4"}),
+      it("20:20","8:20 PM","Chiefs at Seahawks","Sunday Night Football, NBC","game")
+    ],
+    "10-26": [
+      it("14:30","2:30–5:00 PM","IE 322 Homework 9","50 points, due 11:59 PM","study",{id:"s-1026a"}),
+      it("18:00","Evening","IE 302 exam review","","study",{id:"s-1026b"}),
+      it("23:58","11:59 PM","MATSE 259 nuclear materials extra credit","0 points, optional","due",{id:"ec259",opt:true}),
+      it("23:59","11:59 PM","Submit IE 322 Homework 9","50 points, due tonight","due",{id:"hw322-9"})
+    ],
+    "10-27": [
+      it("13:30","1:30–5:00 PM","IE 302 practice problems","","study",{id:"s-1027a"}),
+      it("19:00","7:00–9:00 PM","IE 302 practice problems","","study",{id:"s-1027b"})
+    ],
+    "10-28": [
+      it("13:30","1:30–4:00 PM","IE 302 final review","","study",{id:"s-1028"}),
+      it("18:00","By 6:00 PM","Submit MATSE 259 Quiz 7","1 point, due 11:59 PM","due",{id:"q259-7"}),
+      it("20:00","8:00–10:00 PM","IE 302 exam","Sparks 121. Arrive by 7:40.","exam")
+    ],
+    "10-29": [
+      it("15:00","3:00–5:00 PM","Study for IE 405 Quiz 9","Quiz is in class tomorrow","study",{id:"s-1029"})
+    ],
+    "10-30": [
+      it("12:00","In class","IE 405 Quiz 9","In-class quiz","exam"),
+      it("13:30","1:30 PM","MATSE 259 TA office hours","","free",{opt:true}),
+      it("17:00","5:00 PM","Halloweekend starts","Have everything submitted before you go","party")
+    ],
+    "10-31": [
+      it("12:00","All day","Halloweekend and bar crawl","","party"),
+      it("12:05","Time TBD","Penn State game","Kickoff not confirmed","game")
+    ],
+    "11-1": [
+      it("12:00","Until 11:59 PM","Halloweekend","","party"),
+      it("16:25","4:25 PM","Chiefs at Broncos","CBS","game")
+    ],
+    "11-2": [
+      it("13:30","1:30–5:00 PM","Gather IE 322 notes and redo old homework problems","","study",{id:"s-1102"})
+    ],
+    "11-3": [
+      it("13:30","1:30–5:00 PM","IE 322 review","","study",{id:"s-1103"})
+    ],
+    "11-4": [
+      it("13:30","1:30–5:00 PM","IE 322 practice problems","","study",{id:"s-1104"})
+    ],
+    "11-5": [
+      it("13:30","1:30–4:00 PM","IE 322 review","Bring questions to instructor office hours at 4","study",{id:"s-1105"})
+    ],
+    "11-6": [
+      it("18:00","Evening","Free","","free")
+    ],
+    "11-7": [
+      it("09:00","9:00 AM–12:00 PM","Timed IE 322 practice exam","","study",{id:"s-1107"}),
+      it("12:05","Time TBD","Penn State at Washington","Kickoff not confirmed","game")
+    ],
+    "11-8": [
+      it("13:00","1:00 PM","Chiefs vs Jets","CBS","game"),
+      it("15:00","3:00–7:00 PM","Final IE 322 practice and weak spots","","study",{id:"s-1108"})
+    ],
+    "11-9": [
+      it("14:30","2:30–6:00 PM","IE 322 review","Early night","study",{id:"s-1109"})
+    ],
+    "11-10": [
+      it("13:30","1:30–4:00 PM","Light IE 322 review","","study",{id:"s-1110"}),
+      it("20:00","8:00–9:30 PM","IE 322 Midterm 2","Keller 104. Arrive by 7:40.","exam"),
+      it("21:45","Next","IE 405 Midterm 2 is Nov 19","Start studying Nov 11","free")
+    ]
+  };
+
+  var DAYS = [];
+  (function build() {
+    var d = new Date(2026, 9, 19, 12, 0, 0);
+    var end = new Date(2026, 10, 10, 12, 0, 0);
+    while (d <= end) {
+      var dow = d.getDay(), key = (d.getMonth() + 1) + "-" + d.getDate(), items = [];
+      var wk = dow >= 1 && dow <= 5;
+      if (dow === 1 || dow === 3 || dow === 5) {
+        items.push(it("09:05","9:05–9:55 AM","ENGL 202C","Keller 115","class"));
+        items.push(it("10:10","10:10–11:00 AM","IE 302","ECoRE 102","class"));
+        items.push(it("11:15","11:15 AM–12:05 PM","IE 405","Leonhard 102","class"));
+      } else if (dow === 2 || dow === 4) {
+        items.push(it("09:05","9:05–10:20 AM","IE 322","Willard 262","class"));
+        items.push(it("10:35","10:35–11:50 AM","KINES 77","White Building 106","class"));
+      }
+      if (wk) items.push(it("12:15","12:15–1:20 PM","Gym","","gym"));
+      if (dow === 1) items.push(it("13:00","1:00–2:30 PM","IE 322 TA office hours","Leonhard 105C. Gym ends 1:20, so arrive late.","free",{opt:true}));
+      if (dow === 5) items.push(it("16:00","4:00–5:30 PM","IE 322 TA office hours","Leonhard 105C","free",{opt:true}));
+      if (dow === 2 || dow === 4) items.push(it("16:00","4:00–5:30 PM","IE 322 instructor office hours","By appointment","free",{opt:true}));
+      if (dow === 3) items.push(it("17:30","5:30–7:00 PM","IE 322 recitation","Leonhard 102","free",{opt:true}));
+      (CUSTOM[key] || []).forEach(function (x) { items.push(x); });
+      items.sort(function (a, b) { return a.k < b.k ? -1 : a.k > b.k ? 1 : 0; });
+      DAYS.push({ date: new Date(d.getTime()), items: items });
+      d.setDate(d.getDate() + 1);
+    }
+  })();
+
+  var done = {};
+  try { done = JSON.parse(localStorage.getItem("midterm-stretch-done") || "{}") || {}; } catch (e) { done = {}; }
+  function save() { try { localStorage.setItem("midterm-stretch-done", JSON.stringify(done)); } catch (e) {} }
+
+  function dayIndexFor(dt) {
+    var a = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+    for (var i = 0; i < DAYS.length; i++) {
+      var b = new Date(DAYS[i].date.getFullYear(), DAYS[i].date.getMonth(), DAYS[i].date.getDate()).getTime();
+      if (a === b) return i;
+    }
+    return a < DAYS[0].date.getTime() ? 0 : DAYS.length - 1;
+  }
+  var todayIdx = dayIndexFor(new Date());
+  var sel = todayIdx, view = "day";
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  function renderCounts() {
+    var box = document.getElementById("counts");
+    box.innerHTML = "";
+    var targets = [
+      { lbl: "Next exam", name: "IE 302 exam", when: "Wed Oct 28, 8:00 PM, Sparks 121", at: new Date(2026, 9, 28, 20, 0) },
+      { lbl: "Then", name: "IE 322 Midterm 2", when: "Tue Nov 10, 8:00 PM, Keller 104", at: new Date(2026, 10, 10, 20, 0) }
+    ];
+    var now = new Date();
+    targets.forEach(function (t) {
+      var c = el("div", "count");
+      c.appendChild(el("span", "lbl", t.lbl));
+      c.appendChild(el("span", "name", t.name));
+      var ms = t.at - now, txt;
+      if (ms <= 0) txt = "Done";
+      else {
+        var m = Math.floor(ms / 60000), dd = Math.floor(m / 1440), hh = Math.floor((m % 1440) / 60), mm = m % 60;
+        txt = dd + "d " + hh + "h " + mm + "m";
+      }
+      c.appendChild(el("span", "time", txt));
+      c.appendChild(el("span", "when", t.when));
+      box.appendChild(c);
+    });
+  }
+
+  function renderProgress() {
+    var total = 0, got = 0;
+    DAYS.forEach(function (d) { d.items.forEach(function (x) { if (x.y === "due" && !x.opt) { total++; if (done[x.id]) got++; } }); });
+    document.getElementById("ptxt").textContent = got + " of " + total + " deadlines submitted";
+    document.getElementById("pbar").style.width = (total ? (got / total * 100) : 0) + "%";
+  }
+
+  function renderStrip() {
+    var s = document.getElementById("strip");
+    s.innerHTML = "";
+    DAYS.forEach(function (d, i) {
+      var b = el("button", "dbtn" + (i === todayIdx ? " today" : "") + (i < todayIdx ? " past" : ""));
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(view === "day" && i === sel));
+      b.setAttribute("aria-label", WDL[d.date.getDay()] + " " + MO[d.date.getMonth()] + " " + d.date.getDate());
+      b.appendChild(el("span", "dw", WD[d.date.getDay()]));
+      b.appendChild(el("span", "dn", String(d.date.getDate())));
+      var dots = el("span", "dots"), seen = {};
+      d.items.forEach(function (x) { if (["due","exam","game","party","study"].indexOf(x.y) > -1 && !seen[x.y]) { seen[x.y] = 1; dots.appendChild(el("i", "y-" + x.y)); } });
+      b.appendChild(dots);
+      b.addEventListener("click", function () { sel = i; view = "day"; render(true); });
+      s.appendChild(b);
+    });
+  }
+
+  function dayNode(i) {
+    var d = DAYS[i], box = el("section", "day");
+    var h = el("h2", null, WDL[d.date.getDay()] + ", " + MO[d.date.getMonth()] + " " + d.date.getDate());
+    if (i === todayIdx) h.appendChild(el("small", null, "TODAY"));
+    box.appendChild(h);
+    d.items.forEach(function (x) {
+      var row = el("div", "row y-" + x.y + (x.opt ? " opt" : "") + (x.id && done[x.id] ? " done" : ""));
+      row.appendChild(el("div", "t", x.t));
+      var main = el("div", "main"), body = el("div", "body");
+      var title = el("div", "ttl", x.n);
+      title.appendChild(el("span", "tag", x.opt ? "Optional" : TAGS[x.y]));
+      body.appendChild(title);
+      if (x.s) body.appendChild(el("div", "sub", x.s));
+      if (x.id) {
+        var lab = el("label");
+        var cb = document.createElement("input");
+        cb.type = "checkbox"; cb.id = "cb-" + x.id; cb.checked = !!done[x.id];
+        cb.addEventListener("change", function () {
+          if (cb.checked) done[x.id] = 1; else delete done[x.id];
+          save(); row.classList.toggle("done", cb.checked); renderProgress();
+        });
+        lab.appendChild(cb); lab.appendChild(body);
+        main.appendChild(lab);
+      } else {
+        main.appendChild(el("span", "mk")); main.appendChild(body);
+      }
+      row.appendChild(main);
+      box.appendChild(row);
+    });
+    return box;
+  }
+
+  function renderMain() {
+    var m = document.getElementById("main");
+    m.innerHTML = "";
+    if (view === "day") m.appendChild(dayNode(sel));
+    else for (var i = 0; i < DAYS.length; i++) m.appendChild(dayNode(i));
+  }
+
+  function renderLegend() {
+    var L = document.getElementById("legend");
+    L.innerHTML = "";
+    ["class","gym","study","due","exam","game","party","free"].forEach(function (y) {
+      var s = el("span"), i = el("i"); i.style.background = "var(--c-" + y + ")";
+      s.appendChild(i); s.appendChild(document.createTextNode(TYPES[y])); L.appendChild(s);
+    });
+  }
+
+  function render(scroll) {
+    document.getElementById("tab-day").setAttribute("aria-pressed", String(view === "day"));
+    document.getElementById("tab-all").setAttribute("aria-pressed", String(view === "all"));
+    renderStrip(); renderMain(); renderProgress();
+    if (scroll) {
+      var b = document.querySelectorAll(".dbtn")[sel];
+      if (b && b.scrollIntoView) try { b.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {}
+    }
+  }
+
+  document.getElementById("tab-day").addEventListener("click", function () { view = "day"; render(true); });
+  document.getElementById("tab-all").addEventListener("click", function () { view = "all"; render(false); });
+  document.getElementById("prev").addEventListener("click", function () { view = "day"; sel = Math.max(0, sel - 1); render(true); });
+  document.getElementById("next").addEventListener("click", function () { view = "day"; sel = Math.min(DAYS.length - 1, sel + 1); render(true); });
+
+  renderCounts(); renderLegend(); render(true);
+  setInterval(renderCounts, 60000);
+})();
+</script>
+
+</body>
+</html>
